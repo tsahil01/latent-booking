@@ -9,11 +9,11 @@ const NAME_1 = "harkirat";
 describe("Signup endpoints", () => {
 
   it('Double signup doesnt work', async () => {
-    const response1 = await axios.post(`${BACKEND_URL}/api/v1/signup`, {
+    const response1 = await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
       number: PHONE_NUMBER_1,
     });
 
-    const response2 = await axios.post(`${BACKEND_URL}/api/v1/signup/verify`, {
+    const response2 = await axios.post(`${BACKEND_URL}/api/v1/user/signup/verify`, {
       name: NAME_1,
       otp: "000000"
     });
@@ -23,7 +23,7 @@ describe("Signup endpoints", () => {
     expect(response1.data.id).not.toBeNull();
 
     expect(async () => {
-      await axios.post(`${BACKEND_URL}/api/v1/signup`, {
+      await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
         number: PHONE_NUMBER_1,
       });
     }).toThrow();
