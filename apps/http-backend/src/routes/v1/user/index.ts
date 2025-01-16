@@ -2,16 +2,15 @@
 import { Router } from "express";
 import { client } from "@repo/db/client"; 
 import jwt from "jsonwebtoken";
-import { JWT_PASSWORD } from "../../config";
-import { sendMessage } from "../../utils/twilio";
-import { getToken, verifyToken } from "../../utils/totp";
+import { JWT_PASSWORD } from "../../../config";
+import { sendMessage } from "../../../utils/twilio";
+import { getToken, verifyToken } from "../../../utils/totp";
 
 const router: Router = Router();
 
 router.post("/signup", async (req, res) => {
     const number = req.body.number;
     const totp = getToken(number, "AUTH");
-    // send toipt to phone number
 
     const user = await client.user.upsert({
         where: {
@@ -79,19 +78,14 @@ router.post("/signin", async (req, res) => {
     const number = req.body.number;
     const totp = getToken(number, "AUTH");
     try {
-        console.log(number)
+
         const user = await client.user.findFirstOrThrow({
             where: {
                 number
             }
         });
-        console.log("after nuimebnr" + number);
-    
-        console.log("env is " + process.env.NODE_ENV);
-        // send topt to phone number
+
         if (process.env.NODE_ENV === "production") {
-            console.log("inside send message")
-            // send otp to user
             try {
                 await sendMessage(`Your otp for logging into latent is ${totp}`, number)
             } catch(e) {
