@@ -6,6 +6,9 @@ export function getEvent(eventId: string, adminid?: string) {
             where: {
                 id: eventId,
                 adminId: adminid
+            },
+            include: {
+                seatTypes: true
             }
         })
     }
@@ -13,6 +16,9 @@ export function getEvent(eventId: string, adminid?: string) {
     return client.event.findUnique({
         where: {
             id: eventId
+        },
+        include: {
+            seatTypes: true 
         }
     })
 }

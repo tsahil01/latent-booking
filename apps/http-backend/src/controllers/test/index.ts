@@ -1,8 +1,10 @@
-import { client, AdminType } from "@repo/db/client"; 
+import { client } from "@repo/db/client"; 
 import jwt from "jsonwebtoken";
 import { ADMIN_JWT_PASSWORD } from "../../config";
 
-export async function creatAdmin(number: string, name: string, type: AdminType): Promise<string> {
+type TAdminType = "Creator" | "SuperAdmin";
+
+export async function creatAdmin(number: string, name: string, type: TAdminType): Promise<string> {
     const admin = await client.admin.create({
         data: {
             number,

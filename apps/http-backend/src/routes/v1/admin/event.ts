@@ -2,7 +2,7 @@
 import { Router } from "express";
 import { client } from "@repo/db/client"; 
 import { adminMiddleware } from "../../../middleware/admin";
-import { CreateEventSchema, UpdateEventSchema } from "@repo/common/types";
+import { CreateEventSchema, UpdateEventSchema, UpdateSeatSchema } from "@repo/common/types";
 import { getEvent } from "../../../controllers/events";
 
 const router: Router = Router();
@@ -140,6 +140,97 @@ router.get("/:eventId", adminMiddleware, async (req, res) => {
 
     res.json({
         event
+    });
+});
+
+router.put("/seats/:eventId", adminMiddleware, async (req, res) => {
+    const { data, success } = UpdateSeatSchema.safeParse(req.body);
+    const adminId = req.userId;
+    const eventId = req.params.eventId ?? "";
+
+    if (!success) {
+        res.status(400).json({
+            message: "Invalid data"
+        })
+        return
+    }
+
+    if (!adminId) {
+        res.status(401).json({
+            message: "Unauthorized"
+        })
+        return
+    }
+
+    if (!eventId) {
+        res.status(400).json({
+            message: "Invalid data"
+        })
+        return
+    }
+
+    const event = await client.event.findUnique({
+        where: {
+            id: eventId,
+            adminId
+        }
+    })
+
+    if (!event || event.startTime > new Date() || event.adminId !== adminId) {
+        res.status(404).json({
+            message: "Event not found or already started"
+        })
+        return
+    }
+
+    const currentSeats = await client.seatType.findMany({
+        where: {
+            eventId
+        }
+    })
+
+    const newSeats = data.seats.filter(x => !x.id);
+    const updatedSeats = data.seats.filter(x => x.id && currentSeats.find(y => y.id === x.id));
+    const deletedSeats = currentSeats.filter(x => !data.seats.find(y => y.id === x.id));
+
+    try {
+        await client.$transaction([
+            client.seatType.deleteMany({
+                where: {
+                    eventId: {
+                        "in": deletedSeats.map(x => x.id)
+                    }
+                }
+            }),
+            client.seatType.createMany({
+                data: newSeats.map(x => ({
+                    name: x.name,
+                    description: x.description,
+                    price: x.price,
+                    capacity: x.capacity,
+                    eventId
+                }))
+            }),
+            ...updatedSeats.map(x => client.seatType.update({
+                where: {
+                    id: x.id
+                },
+                data: {
+                    name: x.name,
+                    description: x.description,
+                    price: x.price,
+                    capacity: x.capacity
+                }
+            }))
+        ])
+    } catch(e) {
+        res.status(500).json({
+            message: "Could not update seats"
+        })
+        return;
+    }
+    res.json({
+        message: "Seats updated"
     });
 });
 

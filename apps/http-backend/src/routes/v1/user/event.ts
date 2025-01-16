@@ -1,14 +1,10 @@
 
 import { Router } from "express";
-import { client } from "@repo/db/client"; 
-import jwt from "jsonwebtoken";
-import { JWT_PASSWORD } from "../../config";
-import { sendMessage } from "../../utils/twilio";
-import { getToken, verifyToken } from "../../utils/totp";
+import { client } from "@repo/db/client";
 
 const router: Router = Router();
 
-router.get("/events", async (req, res) => {
+router.get("/", async (req, res) => {
     const events = await client.event.findMany({
         where: {
             published: true,
