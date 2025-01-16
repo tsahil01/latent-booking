@@ -33,7 +33,15 @@ router.post("/", adminMiddleware, async (req, res) => {
                 startTime: data.startTime,
                 locationId: data.location,
                 banner: data.banner,
-                adminId
+                adminId,
+                seatTypes: {
+                    create: data.seats.map(seat => ({
+                        name: seat.name,
+                        description: seat.description,
+                        price: seat.price,
+                        capacity: seat.capacity
+                    }))
+                }
             }
         })
     

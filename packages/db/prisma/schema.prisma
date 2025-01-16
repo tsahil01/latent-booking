@@ -75,7 +75,7 @@ model SeatType {
   seats             Seat[]
   capacity          Int
   filled            Int     @default(0)
-  event             Event @relation(fields: [eventId], references: [id])
+  event             Event   @relation(fields: [eventId], references: [id])
 }
 
 model Payment {
