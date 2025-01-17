@@ -5,11 +5,19 @@ import jwt from "jsonwebtoken";
 import { SUPERADMIN_JWT_PASSWORD } from "../../../config";
 import { sendMessage } from "../../../utils/twilio";
 import { getToken, verifyToken } from "../../../utils/totp";
+import { SignInSchema } from "@repo/common/types";
 
 const router: Router = Router();
 
 router.post("/signin", async (req, res) => {
-    const number = req.body.number;
+    const parsedData = SignInSchema.safeParse(req.body);
+    if (!parsedData.success) {
+        res.status(400).json({
+            message: "Invalid data"
+        })
+        return
+    }
+    const number = parsedData.data.number;
     const totp = getToken(number, "ADMIN_AUTH");
 
     try {
