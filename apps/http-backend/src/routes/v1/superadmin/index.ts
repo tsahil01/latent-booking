@@ -1,11 +1,9 @@
 
 import { Router } from "express";
-import { client } from "@repo/db/client"; 
-import jwt from "jsonwebtoken";
 import { SUPERADMIN_JWT_PASSWORD } from "../../../config";
-import { sendMessage } from "../../../utils/twilio";
-import { getToken, verifyToken } from "../../../utils/totp";
-import { SignInSchema } from "@repo/common/types";
+import { getToken } from "../../../utils/totp";
+import { SignInSchema, SignInVerifySchema } from "@repo/common/types";
+import { adminSignIn, adminSignInVerify } from "../common";
 
 const router: Router = Router();
 
@@ -19,61 +17,22 @@ router.post("/signin", async (req, res) => {
     }
     const number = parsedData.data.number;
     const totp = getToken(number, "ADMIN_AUTH");
+    await adminSignIn(req, res, number, totp);
 
-    try {
-        await client.admin.findFirstOrThrow({
-            where: {
-                number
-            }
-        });
-
-        if (process.env.NODE_ENV === "production") {
-            console.log("inside send message")
-            // send otp to user
-            try {
-                await sendMessage(`Your admin otp for logging into latent is ${totp}`, number)
-            } catch(e) {
-                res.status(500).json({
-                    message: "Could not send otp"
-                })
-                return   
-            }
-        }
-
-        res.json({
-            message: "Otp sent"
-        })
-    } catch(e) {
-        res.status(411).json({
-            message: "User invalid"
-        })
-    }
 });
 
 router.post("/signin/verify", async (req, res) => {
-    const number = req.body.number;    
-    const otp = req.body.totp;
-
-    if (process.env.NODE_ENV === "production" && !verifyToken(number, "ADMIN_AUTH", otp)) {
-        res.json({
-            message: "Invalid token"
+    const parsedData = SignInVerifySchema.safeParse(req.body);
+    if (!parsedData.success) {
+        res.status(400).json({
+            message: "Invalid data"
         })
         return
     }
 
-    const user = await client.user.findFirstOrThrow({
-        where: {
-            number
-        }
-    })
-
-    const token = jwt.sign({
-        userId: user.id
-    }, SUPERADMIN_JWT_PASSWORD)
-
-    res.json({
-        token
-    })
+    const number = parsedData.data.number;
+    const otp = parsedData.data.totp;
+    await adminSignInVerify(req, res, number, otp, SUPERADMIN_JWT_PASSWORD);
 
 });
 
