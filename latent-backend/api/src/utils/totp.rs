@@ -2,7 +2,6 @@ use sha2::{Sha256, Digest};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const TIME_STEP: u64 = 30; // 30 seconds
-const OTP_LENGTH: usize = 6;
 
 pub fn get_token(key: &str, salt: &str) -> String {
     let timestamp = SystemTime::now()
@@ -22,10 +21,13 @@ pub fn get_token(key: &str, salt: &str) -> String {
                (result[offset + 2] as u32) << 8 |
                (result[offset + 3] as u32);
     
-    format!("{:0>6}", code % 1_000_000)
+    format!("{:0>6}", code % 1_000_000) // Always returns 6 digits
 }
 
 pub fn verify_token(key: &str, salt: &str, token: &str) -> bool {
+    if token.len() != 6 {
+        return false;
+    }
     let current = get_token(key, salt);
     token == current
 } 
